@@ -15,3 +15,8 @@ Thumbs.db
 
 # Streamlit cache
 .streamlit/
+
+# Large artifacts kept locally
+data/heart_2022_with_nans.csv
+models/best_scenario_b_stacking.pkl
+
