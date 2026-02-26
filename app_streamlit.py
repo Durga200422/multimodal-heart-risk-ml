@@ -66,7 +66,14 @@ tab_a, tab_b, tab_xai = st.tabs(
 # ---------- Load models & scalers ----------
 
 model_a = joblib.load(MODELS_DIR / "best_scenario_a_linear_svm.pkl")
-model_b = joblib.load(MODELS_DIR / "best_scenario_b_stacking.pkl")
+
+try:
+    # On Streamlit Cloud this file may be missing (too large for GitHub)
+    model_b = joblib.load(MODELS_DIR / "best_scenario_b_stacking.pkl")
+    MODEL_B_AVAILABLE = True
+except FileNotFoundError:
+    model_b = None
+    MODEL_B_AVAILABLE = False
 
 prep_a = prepare_scenario_a_scaler()
 prep_b = prepare_scenario_b_scaler()
@@ -397,28 +404,35 @@ with tab_b:
         )
 
     if st.button("Predict risk (Scenario B)"):
-        inputs = {
-            "age": age_years * 365.25,
-            "gender": 1 if "Female" in gender else 2,
-            "height": height,
-            "weight": weight,
-            "ap_hi": int(ap_hi),
-            "ap_lo": int(ap_lo),
-            "cholesterol": int(chol),
-            "gluc": int(gluc),
-            "smoke": int(smoke),
-            "alco": int(alco),
-            "active": int(active),
-        }
-        X = preprocess_single_b(inputs)
-        proba = float(model_b.predict_proba(X)[0, 1])
+        if not MODEL_B_AVAILABLE:
+            st.error(
+                "The clinical stacking model file is not available on this online demo "
+                "(too large for GitHub). Run the project locally with the full "
+                "`models` folder to enable Scenario B predictions."
+            )
+        else:
+            inputs = {
+                "age": age_years * 365.25,
+                "gender": 1 if "Female" in gender else 2,
+                "height": height,
+                "weight": weight,
+                "ap_hi": int(ap_hi),
+                "ap_lo": int(ap_lo),
+                "cholesterol": int(chol),
+                "gluc": int(gluc),
+                "smoke": int(smoke),
+                "alco": int(alco),
+                "active": int(active),
+            }
+            X = preprocess_single_b(inputs)
+            proba = float(model_b.predict_proba(X)[0, 1])
 
-        st.success(f"Estimated clinical-based risk: {proba * 100:.1f}%")
-        st.progress(min(max(proba, 0.01), 0.99))
+            st.success(f"Estimated clinical-based risk: {proba * 100:.1f}%")
+            st.progress(min(max(proba, 0.01), 0.99))
 
-        with st.expander("See how your clinical values affect risk"):
-            df_explain_b = format_feature_effects_scenario_b(inputs)
-            st.table(df_explain_b)
+            with st.expander("See how your clinical values affect risk"):
+                df_explain_b = format_feature_effects_scenario_b(inputs)
+                st.table(df_explain_b)
 
 
 # ---------- Global explanations tab ----------
