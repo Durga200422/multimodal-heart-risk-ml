@@ -157,17 +157,18 @@ def format_feature_effects_scenario_a(inputs: dict) -> pd.DataFrame:
 
         rows.append(
             {
-                "Feature": k,
-                "Your value": v,
-                "Reference": rv,
-                "Effect": effect,
-                "Strength": diff,
+                "Feature": str(k),
+                "Your value": str(v),
+                "Reference": str(rv),
+                "Effect": str(effect),
+                "Strength": float(diff),
             }
         )
 
     df = pd.DataFrame(rows)
     if not df.empty:
         df = df.sort_values("Strength", ascending=False).drop(columns=["Strength"])
+        df = df.astype(str)  # force everything to string for Arrow safety
     return df
 
 
@@ -334,7 +335,7 @@ with tab_a:
 
         with st.expander("See how your lifestyle values affect risk"):
             df_explain_a = format_feature_effects_scenario_a(inputs)
-            st.dataframe(df_explain_a, use_container_width=True)
+            st.table(df_explain_a)
 
 
 # ---------- Scenario B – Clinical tab ----------
@@ -417,7 +418,7 @@ with tab_b:
 
         with st.expander("See how your clinical values affect risk"):
             df_explain_b = format_feature_effects_scenario_b(inputs)
-            st.dataframe(df_explain_b, use_container_width=True)
+            st.table(df_explain_b)
 
 
 # ---------- Global explanations tab ----------
