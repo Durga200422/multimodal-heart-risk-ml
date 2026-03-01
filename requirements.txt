@@ -8,3 +8,5 @@ lightgbm
 imbalanced-learn
 shap
 imbalanced-learn
+requests
+Pillow
