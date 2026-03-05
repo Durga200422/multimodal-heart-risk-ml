@@ -85,6 +85,7 @@ Scenario A – Lifestyle dataset
     - Sleep hours
     - Diabetes status
     - High risk last year
+      
   - Target: HadHeartAttack (Yes/No → 1/0)
 
 This dataset is saved locally as data/heart_2022_with_nans.csv and is not committed to GitHub due to size. You can replace it with your own BRFSS‑style dataset if needed.
@@ -203,6 +204,7 @@ python -m src.xai_utils run_xai_scenario_b
 - ​Saves:
     - results/scenario_b/scenario_b_shap_bar.png
     - results/scenario_b/scenario_b_shap_beeswarm.png
+
 These plots show which features most strongly drive the model’s predictions (e.g., systolic BP, age, cholesterol, etc.), and they align well with established cardiovascular risk factors.
 
 ## Streamlit web application
@@ -310,6 +312,7 @@ Planned improvements:
 If you reference this project in a portfolio, blog post, or report, you can describe it as:
 
 “A multimodal machine learning demo for heart disease risk prediction, combining BRFSS‑style lifestyle survey data and the Kaggle cardiovascular disease dataset, with full training pipeline, explainability (permutation importance, SHAP), and an interactive Streamlit app.”
+
 
 
 
