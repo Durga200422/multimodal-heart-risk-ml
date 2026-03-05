@@ -253,38 +253,39 @@ When deploying, ensure that the data/ directory and required model/scaler files 
 ## Methodology summary
 **Preprocessing**
 - **Scenario A**
-      - Centralized encoding via encode_scenario_a_raw:
-          - String cleaning
-          - Ordinal mapping for age categories
-          - Binary mapping for sex and Yes/No style features
-          - Median/mode imputation
-      - Train/test split with stratification
-      - SMOTE on training data only (to handle class imbalance)
-      - Standardization with StandardScaler
+  - Centralized encoding via encode_scenario_a_raw:
+    - String cleaning
+    - Ordinal mapping for age categories
+    - Binary mapping for sex and Yes/No style features
+    - Median/mode imputation
+    - Train/test split with stratification
+    - SMOTE on training data only (to handle class imbalance)
+    - Standardization with StandardScaler
 
 - **Scenario B**
-      - Age converted from days to years
-      - Median imputation for numeric features
-      - Stratified train/test split
-      - SMOTE on training data
-      - Standardization with StandardScaler
+  - Age converted from days to years
+  - Median imputation for numeric features
+  - Stratified train/test split
+  - SMOTE on training data
+  - Standardization with StandardScaler
 
 Modeling & evaluation
 - **Models:**
-      - Logistic Regression, Decision Tree, Random Forest
-      - Linear and RBF SVM
-      - KNN
-      - XGBoost, LightGBM
-      - Stacking ensembles
-      - MLP
+  - Logistic Regression, Decision Tree, Random Forest
+  - Linear and RBF SVM
+  - KNN
+  - XGBoost, LightGBM
+  - Stacking ensembles
+  - MLP
 - **Metrics:**
-      - Accuracy, Precision, Recall, F1, ROC‑AUC
+  - Accuracy, Precision, Recall, F1, ROC‑AUC
 - **Visuals:**
-      - ROC curves
-      - Confusion matrices
-      - Metric bar plots
+  - ROC curves
+  - Confusion matrices
+  - Metric bar plots
 
 Scenario A achieves ROC‑AUC around 0.77 with high recall but low precision (suitable for screening).
+
 Scenario B achieves ROC‑AUC around 0.80 with balanced precision/recall, consistent with reported performance on this dataset.
 
 ## Limitations and future work
@@ -312,6 +313,7 @@ Planned improvements:
 If you reference this project in a portfolio, blog post, or report, you can describe it as:
 
 “A multimodal machine learning demo for heart disease risk prediction, combining BRFSS‑style lifestyle survey data and the Kaggle cardiovascular disease dataset, with full training pipeline, explainability (permutation importance, SHAP), and an interactive Streamlit app.”
+
 
 
 
