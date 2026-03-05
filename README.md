@@ -85,7 +85,7 @@ Scenario A – Lifestyle dataset
     - Sleep hours
     - Diabetes status
     - High risk last year
-    - Target: HadHeartAttack (Yes/No → 1/0)
+  - Target: HadHeartAttack (Yes/No → 1/0)
 
 This dataset is saved locally as data/heart_2022_with_nans.csv and is not committed to GitHub due to size. You can replace it with your own BRFSS‑style dataset if needed.
 
@@ -310,6 +310,7 @@ Planned improvements:
 If you reference this project in a portfolio, blog post, or report, you can describe it as:
 
 “A multimodal machine learning demo for heart disease risk prediction, combining BRFSS‑style lifestyle survey data and the Kaggle cardiovascular disease dataset, with full training pipeline, explainability (permutation importance, SHAP), and an interactive Streamlit app.”
+
 
 
 
