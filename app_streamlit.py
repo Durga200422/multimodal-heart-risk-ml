@@ -1,11 +1,12 @@
+import sys
+from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
-import streamlit as st
-from pathlib import Path
-import sys
-from PIL import Image
 import requests
+import streamlit as st
+from PIL import Image
 
 # ---------- Paths ----------
 
@@ -17,9 +18,18 @@ RESULTS_B = BASE_DIR / "results" / "scenario_b"
 # Ensure models directory exists (important for Streamlit Cloud)
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Add src to path
+# Make src importable
 sys.path.append(str(BASE_DIR / "src"))
-from src.data_prep import encode_scenario_a_raw
+from data_prep import encode_scenario_a_raw  # type: ignore
+
+
+# ---------- Helper to load scaler (support dict or raw object) ----------
+
+def _load_scaler(path: Path):
+    obj = joblib.load(path)
+    if isinstance(obj, dict) and "scaler" in obj:
+        return obj["scaler"]
+    return obj
 
 
 # ---------- Google Drive Download ----------
@@ -27,10 +37,8 @@ from src.data_prep import encode_scenario_a_raw
 def download_file_from_drive(file_id: str, dest_path: Path):
     URL = "https://drive.google.com/uc?export=download"
     session = requests.Session()
-
     response = session.get(URL, params={"id": file_id}, stream=True)
     response.raise_for_status()
-
     with open(dest_path, "wb") as f:
         for chunk in response.iter_content(8192):
             if chunk:
@@ -72,15 +80,31 @@ tab_a, tab_b, tab_xai = st.tabs(
     ["Scenario A – Lifestyle", "Scenario B – Clinical", "Global explanations (XAI)"]
 )
 
-# ---------- Load Scenario A Model ----------
+# ---------- Load Scenario A Model & Scaler ----------
 
-model_a = joblib.load(MODELS_DIR / "best_scenario_a_linear_svm.pkl")
-scaler_a = joblib.load(MODELS_DIR / "scaler_scenario_a.pkl")
+model_a_path = MODELS_DIR / "best_scenario_a_linear_svm.pkl"
+scaler_a_path = MODELS_DIR / "scaler_scenario_a.pkl"
+
+if not model_a_path.is_file() or not scaler_a_path.is_file():
+    st.error(
+        "Scenario A model or scaler not found in the `models/` folder. "
+        "Please ensure `best_scenario_a_linear_svm.pkl` and `scaler_scenario_a.pkl` "
+        "are present."
+    )
+    st.stop()
+
+model_a = joblib.load(model_a_path)
+scaler_a = _load_scaler(scaler_a_path)
 
 feat_a = [
-    "BMI", "AgeCategory", "Sex", "SmokerStatus",
-    "PhysicalActivities", "SleepHours",
-    "HadDiabetes", "HighRiskLastYear"
+    "BMI",
+    "AgeCategory",
+    "Sex",
+    "SmokerStatus",
+    "PhysicalActivities",
+    "SleepHours",
+    "HadDiabetes",
+    "HighRiskLastYear",
 ]
 
 # ---------- Load Scenario B Model (Auto Download) ----------
@@ -90,15 +114,35 @@ FILE_ID = "1ibg40pfwmeStcoLm1T7okPj7K5SWcaIk"
 
 if not MODEL_B_PATH.exists():
     with st.spinner("Downloading Scenario B model from Google Drive..."):
-        download_file_from_drive(FILE_ID, MODEL_B_PATH)
+        try:
+            download_file_from_drive(FILE_ID, MODEL_B_PATH)
+        except Exception as e:
+            st.error(f"Failed to download Scenario B model: {e}")
+            st.stop()
+
+scaler_b_path = MODELS_DIR / "scaler_scenario_b.pkl"
+if not scaler_b_path.is_file():
+    st.error(
+        "Scenario B scaler not found in the `models/` folder "
+        "(expected `scaler_scenario_b.pkl`)."
+    )
+    st.stop()
 
 model_b = joblib.load(MODEL_B_PATH)
-scaler_b = joblib.load(MODELS_DIR / "scaler_scenario_b.pkl")
+scaler_b = _load_scaler(scaler_b_path)
 
 feat_b = [
-    "age", "gender", "height", "weight",
-    "ap_hi", "ap_lo", "cholesterol", "gluc",
-    "smoke", "alco", "active"
+    "age",
+    "gender",
+    "height",
+    "weight",
+    "ap_hi",
+    "ap_lo",
+    "cholesterol",
+    "gluc",
+    "smoke",
+    "alco",
+    "active",
 ]
 
 # ---------- Preprocessing ----------
@@ -110,10 +154,12 @@ def preprocess_single_a(inputs_dict):
     X = sub.values.astype(float)
     return scaler_a.transform(X)
 
+
 def preprocess_single_b(inputs_dict):
     df = pd.DataFrame([inputs_dict])
     X = df[feat_b].astype(float).values
     return scaler_b.transform(X)
+
 
 # ---------- Scenario A ----------
 
@@ -121,16 +167,28 @@ with tab_a:
     st.subheader("Scenario A – Lifestyle screening")
 
     BMI = st.number_input("BMI", 10.0, 60.0, 25.0)
-    age_cat = st.selectbox("Age category", [
-        "Age 18 to 24","Age 25 to 29","Age 30 to 34","Age 35 to 39",
-        "Age 40 to 44","Age 45 to 49","Age 50 to 54","Age 55 to 59",
-        "Age 60 to 64","Age 65 to 69","Age 70 to 74",
-        "Age 75 to 79","Age 80 or older"
-    ])
+    age_cat = st.selectbox(
+        "Age category",
+        [
+            "Age 18 to 24",
+            "Age 25 to 29",
+            "Age 30 to 34",
+            "Age 35 to 39",
+            "Age 40 to 44",
+            "Age 45 to 49",
+            "Age 50 to 54",
+            "Age 55 to 59",
+            "Age 60 to 64",
+            "Age 65 to 69",
+            "Age 70 to 74",
+            "Age 75 to 79",
+            "Age 80 or older",
+        ],
+    )
     sex = st.selectbox("Sex", ["Female", "Male"])
     smoker_status = st.selectbox(
         "SmokerStatus",
-        ["Never smoked", "Former smoker", "Current smoker"]
+        ["Never smoked", "Former smoker", "Current smoker"],
     )
     phys_act = st.selectbox("PhysicalActivities", ["No", "Yes"])
     sleep = st.number_input("SleepHours", 0.0, 14.0, 7.0)
@@ -154,9 +212,9 @@ with tab_a:
         proba = 1.0 / (1.0 + np.exp(-score))
 
         st.success(f"Estimated lifestyle-based risk: {proba*100:.1f}%")
-        st.progress(min(max(proba, 0.01), 0.99))
-        
-                # ---------- Local Explanation Table (Scenario A) ----------
+        st.progress(float(min(max(proba, 0.01), 0.99)))
+
+        # ---------- Local Explanation Table (Scenario A) ----------
 
         ref = {
             "BMI": 22.0,
@@ -170,30 +228,23 @@ with tab_a:
         }
 
         rows = []
-
         for k, v in inputs.items():
             rv = ref.get(k, None)
             if rv is None:
                 continue
 
-            if k == "BMI":
-                diff = abs(float(v) - float(rv))
-            elif k == "SleepHours":
+            if k in ["BMI", "SleepHours"]:
                 diff = abs(float(v) - float(rv))
             else:
                 diff = 0.0 if str(v) == str(rv) else 1.0
 
-            if k == "BMI":
-                direction = "Higher" if v > rv else "Lower"
-            elif k == "SleepHours":
+            if k in ["BMI", "SleepHours"]:
                 direction = "Higher" if v > rv else "Lower"
             elif k == "SmokerStatus":
                 direction = "Higher" if v == "Current smoker" else "Lower"
             elif k == "PhysicalActivities":
                 direction = "Lower" if v == "Yes" else "Higher"
-            elif k == "HadDiabetes":
-                direction = "Higher" if v == "Yes" else "Lower"
-            elif k == "HighRiskLastYear":
+            elif k in ["HadDiabetes", "HighRiskLastYear"]:
                 direction = "Higher" if v == "Yes" else "Lower"
             else:
                 direction = "Neutral"
@@ -215,14 +266,23 @@ with tab_a:
 
             rows.append([k, v, rv, diff, effect])
 
-        explanation_df_a = pd.DataFrame(
-            rows,
-            columns=["Feature", "Your value", "Reference", "Distance from healthy", "Effect"]
-        ).sort_values(by="Distance from healthy", ascending=False)
+        explanation_df_a = (
+            pd.DataFrame(
+                rows,
+                columns=[
+                    "Feature",
+                    "Your value",
+                    "Reference",
+                    "Distance from healthy",
+                    "Effect",
+                ],
+            )
+            .sort_values(by="Distance from healthy", ascending=False)
+            .astype(str)
+        )
 
-        explanation_df_a = explanation_df_a.astype(str)
         st.markdown("### Individual Feature Explanation (Scenario A)")
-        st.dataframe(explanation_df_a, width="stretch")
+        st.dataframe(explanation_df_a, use_container_width=True)
 
 # ---------- Scenario B ----------
 
@@ -260,9 +320,9 @@ with tab_b:
         proba = float(model_b.predict_proba(X)[0, 1])
 
         st.success(f"Estimated clinical-based risk: {proba*100:.1f}%")
-        st.progress(min(max(proba, 0.01), 0.99))
-        
-                # ---------- Local Explanation Table (Scenario B) ----------
+        st.progress(float(min(max(proba, 0.01), 0.99)))
+
+        # ---------- Local Explanation Table (Scenario B) ----------
 
         ref = {
             "age": 45 * 365.25,
@@ -278,7 +338,6 @@ with tab_b:
         }
 
         rows = []
-
         for k, v in inputs.items():
             if k not in ref:
                 continue
@@ -318,15 +377,23 @@ with tab_b:
 
             rows.append([k, v, rv, diff, effect])
 
-        explanation_df_b = pd.DataFrame(
-            rows,
-            columns=["Feature", "Your value", "Reference", "Distance from healthy", "Effect"]
-        ).sort_values(by="Distance from healthy", ascending=False)
-
-        explanation_df_b = explanation_df_b.astype(str)
+        explanation_df_b = (
+            pd.DataFrame(
+                rows,
+                columns=[
+                    "Feature",
+                    "Your value",
+                    "Reference",
+                    "Distance from healthy",
+                    "Effect",
+                ],
+            )
+            .sort_values(by="Distance from healthy", ascending=False)
+            .astype(str)
+        )
 
         st.markdown("### Individual Feature Explanation (Scenario B)")
-        st.dataframe(explanation_df_b, width="stretch")
+        st.dataframe(explanation_df_b, use_container_width=True)
 
 # ---------- XAI ----------
 
@@ -335,6 +402,7 @@ def load_image_safe(path: Path):
         return Image.open(path)
     return None
 
+
 with tab_xai:
     st.subheader("Global explanations")
 
@@ -342,14 +410,13 @@ with tab_xai:
 
     with col1:
         img = load_image_safe(RESULTS_A / "scenario_a_perm_importance.png")
-        if img:
+        if img is not None:
             st.image(img, caption="Scenario A – Permutation Importance")
 
     with col2:
         img1 = load_image_safe(RESULTS_B / "scenario_b_shap_bar.png")
         img2 = load_image_safe(RESULTS_B / "scenario_b_shap_beeswarm.png")
-
-        if img1:
+        if img1 is not None:
             st.image(img1, caption="Scenario B – SHAP Bar")
-        if img2:
+        if img2 is not None:
             st.image(img2, caption="Scenario B – SHAP Beeswarm")
