@@ -22,6 +22,8 @@ Both scenarios output:
 - **Global explanations** (feature importance via permutation importance or SHAP)
 - **Local explanations** (per‑patient feature explanation tables in the app)
 
+**Updated Work:** This project has been expanded with Advanced Hybrid Research Models (ML+DL and ML+GA) to optimize predictive recall and ROC-AUC.
+
 **⚠️ Disclaimer:**
 **This project is for research and educational purposes only. It is not a medical device and must not be used for clinical decision‑making.**
 
@@ -37,6 +39,7 @@ multimodal-heart-risk-ml/
 │   ├── best_scenario_b_stacking.pkl*    # Deployed Scenario B model (downloaded at runtime)
 │   ├── lgbm_scenario_a.pkl              # Auxiliary models used in experiments
 │   ├── lgbm_scenario_b.pkl
+|   ├── hybrid_ml_dl_scenario_b_meta_dnn.h5  # (Git LFS) Scenario B DL meta-learner.
 │   ├── scaler_scenario_a.pkl            # Feature scaler for Scenario A
 │   └── scaler_scenario_b.pkl            # Feature scaler for Scenario B
 │
@@ -61,7 +64,10 @@ multimodal-heart-risk-ml/
 │   ├── models_scenario_a.py      # Training/evaluation for Scenario A models
 │   ├── models_scenario_b.py      # Training/evaluation for Scenario B models
 │   ├── save_best_models.py       # Train & persist best models for deployment
-│   └── xai_utils.py              # XAI scripts (permutation importance, SHAP)
+|   ├── hybrid_ml_dl.py           # Stacking with Deep Learning meta-learner.
+|   ├── hybrid_ml_ga.py           # Ensemble weight optimization using Genetic Algorithms.
+|   ├── compare_all_models.py     # Master script for comprehensive evaluation.
+|   └── xai_utils.py              # XAI scripts (permutation importance, SHAP)
 │
 ├── app_streamlit.py              # Streamlit web app (multimodal demo)
 ├── save_scalers.py               # Script to fit & save scalers for inference
@@ -287,6 +293,16 @@ Modeling & evaluation
 Scenario A achieves ROC‑AUC around 0.77 with high recall but low precision (suitable for screening).
 
 Scenario B achieves ROC‑AUC around 0.80 with balanced precision/recall, consistent with reported performance on this dataset.
+
+## Results
+We have updated this research by incorporating advanced Hybrid Models (ML+DL and ML+GA), expanding our evaluation to 11 distinct architectures per scenario. Consequently, the final results and selected "best" models have been updated as follows:
+
+**🏆 Final Model Selection**
+Based on our comprehensive research evaluation:  
+- **Scenario A (Lifestyle): Linear SVM** remains the selected best model for its superior **ROC-AUC (0.776) and Recall (0.753).**
+- **Scenario B (Clinical): Hybrid ML+DL** is now selected as the best model, achieving the highest **Recall (0.742) and F1-Score (0.728).** This proves that neural meta-learners significantly enhance clinical diagnostic accuracy compared to traditional stacking methods.
+
+**Note:** Any subsequent mentions of the "Stacking Ensemble" as the top performer for Scenario B in the sections below should be considered part of the preliminary phase of this research, which has now been surpassed by the **Hybrid ML+DL architecture.**
 
 ## Limitations and future work
 - Single train/test split; no external validation dataset.
