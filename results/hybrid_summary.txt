@@ -1,0 +1,17 @@
+======================================================================
+HYBRID MODELS PERFORMANCE SUMMARY
+======================================================================
+
+SCENARIO A (Lifestyle):
+----------------------------------------
+  Hybrid ML+DL  ROC-AUC: 0.6432
+  Hybrid ML+GA  ROC-AUC: 0.7355
+  Best Traditional: LinearSVM (ROC-AUC: 0.7758)
+
+SCENARIO B (Clinical):
+----------------------------------------
+  Hybrid ML+DL  ROC-AUC: 0.7879
+  Hybrid ML+GA  ROC-AUC: 0.7999
+  Best Traditional: StackingEnsemble (ROC-AUC: 0.8002)
+
+======================================================================
